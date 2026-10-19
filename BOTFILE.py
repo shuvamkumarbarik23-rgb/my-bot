@@ -16,7 +16,7 @@ import hashlib
 import re
 
 # Bot Configuration
-BOT_TOKEN = os.environ.get("8886072251:AAHCrETTuEIqcbBvlbTEu-is_zaAO2jltvc", "").strip()
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 ADMIN_ID = 5183116678
 API_BASE_URL = "https://jiosavanapiryden.vercel.app/api"
 SUPPORT_LINK = "https://t.me/+nMI0CbTyScJhODE1"
@@ -196,7 +196,7 @@ Your ultimate destination for high-quality music streaming and downloads.
 4️⃣ Get instant high-quality audio!
 
 ━━━━━━━━━━━━━━━━
-👨‍💻 Developer: @vishalcodeverse
+👨‍💻 Developer: @KingofcursesX
 ━━━━━━━━━━━━━━━━"""
     
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -269,8 +269,8 @@ Bringing high-quality music to everyone, everywhere, completely free.
 👨‍💻 DEVELOPER 👨‍💻
 ━━━━━━━━━━━━━━━━
 
-Name: Vishal Codeverse
-Contact: @vishalcodeverse
+Name: Sukuna aka Shuvam
+Contact: @KingofcursesX
 
 ━━━━━━━━━━━━━━━━
 📊 BOT STATS 📊
@@ -316,7 +316,7 @@ def stats_command(message):
 
 Thanks for using Melody Stream! 🎧
 
-— @vishalcodeverse"""
+— @KingofcursesX"""
     
     if is_admin(user_id):
         stats_text += f"""
@@ -428,7 +428,7 @@ def admin_command(message):
 
 ━━━━━━━━━━━━━━━━
 
-— @vishalcodeverse"""
+— @KingofcursesX"""
     
     bot.send_message(message.chat.id, admin_text)
 
@@ -456,7 +456,7 @@ def ping_command(message):
 ⏱️ Uptime: {format_uptime(uptime)}
 ✅ Status: Online & Healthy
 
-— @vishalcodeverse"""
+— @KingofcursesX"""
     
     bot.edit_message_text(ping_text, message.chat.id, msg.message_id)
 
@@ -500,7 +500,7 @@ def process_broadcast(message):
 ❌ Failed: {failed}
 👥 Total Users: {len(data["users"])}
 
-— @vishalcodeverse"""
+— @KingofcursesX"""
     
     bot.edit_message_text(result_text, message.chat.id, status_msg.message_id)
 
@@ -549,7 +549,7 @@ def process_announcement(message):
     
     announce_text = message.text
     
-    sent_msg = bot.send_message(message.chat.id, f"📢 ANNOUNCEMENT\n\n━━━━━━━━━━━━━━━━\n\n{announce_text}\n\n━━━━━━━━━━━━━━━━\n\n— @vishalcodeverse")
+    sent_msg = bot.send_message(message.chat.id, f"📢 ANNOUNCEMENT\n\n━━━━━━━━━━━━━━━━\n\n{announce_text}\n\n━━━━━━━━━━━━━━━━\n\n— @kingofcursesX")
     
     try:
         bot.pin_chat_message(message.chat.id, sent_msg.message_id)
@@ -687,7 +687,7 @@ def song_callback(call):
 📊 Quality: 320kbps MP3
 
 ━━━━━━━━━━━━━━━━
-👨‍💻 Developer: @vishalcodeverse
+👨‍💻 Developer: @kingofcursesX
 
 🎧 Keep vibing with Melody Stream!"""
         
@@ -761,25 +761,30 @@ def main():
     print(f"📥 Total Downloads: {data.get('total_downloads', 0)}")
     print(f"⏱️ Bot Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 50)
-    print("✅ Bot is running successfully!")
+    print("✅ Bot startup complete.")
     print("✅ Admin panel command: /admin")
     print("=" * 50)
-    
+
+    # Render Background Workers can run a polling process directly.
+    # No PORT or web server is required for this bot.
     while True:
         try:
-            # Skip pending updates after restarts to avoid replaying a large backlog.
             bot.infinity_polling(
                 timeout=20,
                 long_polling_timeout=10,
                 skip_pending=True
             )
+            # infinity_polling normally runs until stopped; if it returns, retry.
+            print("Polling stopped; restarting in 5 seconds...")
+            time.sleep(5)
         except KeyboardInterrupt:
-            print("Bot stopped by user.")
+            print("Bot stopped by keyboard interrupt.")
             break
-        except Exception as e:
-            print(f"⚠️ Polling error: {e}")
+        except Exception as exc:
+            print(f"⚠️ Polling error: {exc}")
             print("🔄 Retrying in 5 seconds...")
             time.sleep(5)
+
 
 if __name__ == "__main__":
     main()
