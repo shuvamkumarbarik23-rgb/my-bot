@@ -2,7 +2,7 @@
 """ 
 🎵 Melody Stream Bot - Advanced Telegram Music Bot
 Powered by JioSaavn API
-Created by: @vishalcodeverse
+Created by: @KingofcursesX
 """
 
 import telebot
@@ -16,13 +16,15 @@ import hashlib
 import re
 
 # Bot Configuration
-BOT_TOKEN = "8886072251:AAHCrETTuEIqcbBvlbTEu-is_zaAO2jltvc"
+BOT_TOKEN = os.environ.get("8886072251:AAHCrETTuEIqcbBvlbTEu-is_zaAO2jltvc", "").strip()
 ADMIN_ID = 5183116678
 API_BASE_URL = "https://jiosavanapiryden.vercel.app/api"
 SUPPORT_LINK = "https://t.me/+nMI0CbTyScJhODE1"
 CHANNEL_LINK = "https://t.me/+nMI0CbTyScJhODE1"
 
 # Initialize bot
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN is missing. Set it in your environment variables.")
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # Data storage
@@ -31,18 +33,35 @@ bot_start_time = time.time()
 
 # Load data
 def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            return json.load(f)
-    return {
+    default_data = {
         "users": [],
         "total_downloads": 0,
         "total_searches": 0
     }
+    if not os.path.exists(DATA_FILE):
+        return default_data
+
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+        if not isinstance(loaded, dict):
+            return default_data
+
+        # Keep the expected fields even if an older data file is incomplete.
+        default_data.update(loaded)
+        if not isinstance(default_data.get("users"), list):
+            default_data["users"] = []
+        return default_data
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Warning: could not read {DATA_FILE}: {exc}")
+        return default_data
 
 def save_data(data):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+    try:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except OSError as exc:
+        print(f"Warning: could not save {DATA_FILE}: {exc}")
 
 data = load_data()
 
@@ -188,7 +207,7 @@ Your ultimate destination for high-quality music streaming and downloads.
     markup.add(btn_search, btn_stats)
     markup.add(btn_dev, btn_channel)
     
-    bot.send_message(message.chat.id, welcome_text)
+    bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
     bot.send_message(message.chat.id, "👇 Use the buttons below to get started 👇", reply_markup=create_main_keyboard())
 
 @bot.message_handler(commands=['help'])
@@ -618,8 +637,11 @@ def handle_text(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('song_'))
 def song_callback(call):
-    song_id = call.data.replace('song_', '')
+    song_id = call.data.replace("song_", "", 1).strip()
     bot.answer_callback_query(call.id, "🔄 Fetching your song...")
+    if not song_id:
+        bot.send_message(call.message.chat.id, "❌ Invalid song selection. Please search again.")
+        return
     
     processing_msg = bot.send_message(call.message.chat.id, "🎵 PROCESSING YOUR REQUEST\n\n⏳ Fetching high-quality audio...")
     
@@ -692,9 +714,15 @@ def song_callback(call):
     except Exception as e:
         print(f"Error in song_callback: {e}")
         try:
-            bot.edit_message_text(f"❌ Error Occurred!\n\nPlease try again later.", call.message.chat.id, processing_msg.message_id)
-        except:
+            bot.edit_message_text("❌ Error occurred. Please try again later.", call.message.chat.id, processing_msg.message_id)
+        except Exception:
             pass
+        finally:
+            try:
+                if "temp_filename" in locals() and os.path.exists(temp_filename):
+                    os.remove(temp_filename)
+            except OSError:
+                pass
 
 @bot.callback_query_handler(func=lambda call: call.data == "new_search")
 def new_search_callback(call):
@@ -739,10 +767,18 @@ def main():
     
     while True:
         try:
-            bot.infinity_polling(timeout=10, long_polling_timeout=5)
+            # Skip pending updates after restarts to avoid replaying a large backlog.
+            bot.infinity_polling(
+                timeout=20,
+                long_polling_timeout=10,
+                skip_pending=True
+            )
+        except KeyboardInterrupt:
+            print("Bot stopped by user.")
+            break
         except Exception as e:
             print(f"⚠️ Polling error: {e}")
-            print("🔄 Restarting bot in 5 seconds...")
+            print("🔄 Retrying in 5 seconds...")
             time.sleep(5)
 
 if __name__ == "__main__":
